@@ -1,5 +1,4 @@
 import createdata
-
 import random
 import time
 
@@ -198,7 +197,6 @@ def inversion_mutation(generation):
 size_of_generation = 200
 parents_for_next_generation = int(size_of_generation * 0.5)
 number_of_generations = 10000
-
 chance_for_mutation = 2
 
 
@@ -212,75 +210,76 @@ def main():
             break
         else:
             print("Choose another file or use a generator.")
+    for attempt in range(5):
+        start_time = time.time()
 
-    start_time = time.time()
+        cities = [x for x in range(len(matrix))]
+        ranks, max_rank = create_ranks(size_of_generation, 2)
+        # print(ranks)
+        generation = []
+        i = 0
+        generation_without_change = 0
+        last_distance = 0
 
-    cities = [x for x in range(len(matrix))]
-    ranks, max_rank = create_ranks(size_of_generation, 2)
-    print(ranks)
-    generation = []
-    i = 0
-    generation_without_change = 0
-    last_distance = 0
-
-    while len(generation) < size_of_generation:
-        chance = random.randint(1, 10)
-        if chance <= 9:
-            route = random.sample(cities, len(cities))
-        else:
-            route = greedy(matrix, random.randint(0, len(cities) - 1))
-        if route not in generation:
-            generation.append(route)
-
-    while True:
-
-        # random.shuffle(generation)
-
-        tmp_distance, tmp_route = find_shortest_route(generation, matrix)
-
-        if abs(last_distance - tmp_distance) < tmp_distance * 0.001:
-            generation_without_change += 1
-        else:
-            generation_without_change = 0
-
-        chance_for_mutation = float(min(10.0, 2.0 + float(generation_without_change) / 500))
-
-        print(f'{i + 1} :  {tmp_distance}, {generation_without_change}, {chance_for_mutation}')
-        last_distance = tmp_distance
-        i += 1
-
-        generation.remove(tmp_route)
-
-        generation = tournament(generation, matrix)
-        # generation = rank_based_wheel_selection(generation, matrix, ranks, max_rank)
-        # generation = choose_the_best(generation, matrix)
-
-        generation.append(tmp_route)
-
-        available_parents = [x for x in range(0, len(generation))]
-
-        while available_parents:
-
-            parent1_index = random.choice(available_parents)
-            available_parents.remove(parent1_index)
-
-            parent2_index = random.choice(available_parents)
-            available_parents.remove(parent2_index)
-
+        while len(generation) < size_of_generation:
             chance = random.randint(1, 10)
-            if chance <= 10:
-                tmp1, tmp2 = ox(generation[parent1_index], generation[parent2_index])
+            if chance <= 9:
+                route = random.sample(cities, len(cities))
             else:
-                tmp1, tmp2 = pmx(generation[parent1_index], generation[parent2_index])
+                route = greedy(matrix, random.randint(0, len(cities) - 1))
+            if route not in generation:
+                generation.append(route)
 
-            generation.append(tmp1)
-            generation.append(tmp2)
+        while True:
 
-        generation = inversion_mutation(generation)
+            # random.shuffle(generation)
 
-        if time.time() - start_time >= 120:
-            print(time.time() - start_time)
-            break
+            tmp_distance, tmp_route = find_shortest_route(generation, matrix)
+
+            if abs(last_distance - tmp_distance) < tmp_distance * 0.001:
+                generation_without_change += 1
+            else:
+                generation_without_change = 0
+
+            chance_for_mutation = float(min(10.0, 2.0 + float(generation_without_change) / 500))
+
+            # print(f'{i + 1} :  {tmp_distance}, {generation_without_change}, {chance_for_mutation}')
+            last_distance = tmp_distance
+            i += 1
+
+            generation.remove(tmp_route)
+
+            generation = tournament(generation, matrix)
+            # generation = rank_based_wheel_selection(generation, matrix, ranks, max_rank)
+            # generation = choose_the_best(generation, matrix)
+
+            generation.append(tmp_route)
+
+            available_parents = [x for x in range(0, len(generation))]
+
+            while available_parents:
+
+                parent1_index = random.choice(available_parents)
+                available_parents.remove(parent1_index)
+
+                parent2_index = random.choice(available_parents)
+                available_parents.remove(parent2_index)
+
+                chance = random.randint(1, 10)
+                if chance <= 10:
+                    tmp1, tmp2 = ox(generation[parent1_index], generation[parent2_index])
+                else:
+                    tmp1, tmp2 = pmx(generation[parent1_index], generation[parent2_index])
+
+                generation.append(tmp1)
+                generation.append(tmp2)
+
+            generation = inversion_mutation(generation)
+
+            if time.time() - start_time >= 3:
+                print(time.time() - start_time)
+                break
+        print(f'Run {attempt + 1}: {tmp_distance}')
 
 
 if __name__ == '__main__':
