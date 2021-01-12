@@ -1,8 +1,8 @@
 import createdata
 
 
-def calculate(matrix):
-    visited = [0]   # wierzchołki w kolejności w jakiej nalezy je odwiedzić
+def calculate(matrix, starting_index):
+    visited = [starting_index]   # wierzchołki w kolejności w jakiej nalezy je odwiedzić
     road = 0        # całkowita odległość do pokonania
     minindex = 0
 
@@ -18,14 +18,14 @@ def calculate(matrix):
                 if mintmp == 0:
                     mintmp = value
                     minindex = index
-                elif mintmp > value:
+                elif mintmp >= value:
                     mintmp = value
                     minindex = index
         visited.append(minindex)
         road += mintmp
 
     print('The distance is equal to: ', round(road + matrix[minindex][0], 3))
-    print(*(visited + [0]), sep=' -> ')
+    print(*(visited + [starting_index]), sep=' -> ')
 
 
 def main():
@@ -37,10 +37,9 @@ def main():
     #     else:
     #         print("Choose another file or use a generator.")
 
-
     file = createdata.choose_file()
     matrix = createdata.create_matrix(file)
-    calculate(matrix)
+    calculate(matrix, 3)
 
 
 if __name__ == '__main__':

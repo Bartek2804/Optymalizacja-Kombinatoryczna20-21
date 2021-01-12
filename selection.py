@@ -1,32 +1,9 @@
 import createdata
-
 import random
 import time
 
 
-def calculate_fitness(matrix, route):
-
-    distance = 0
-    for index in range(len(route) - 1):
-        distance += matrix[route[index]][route[index + 1]]
-
-    return round(distance, 3)
-
-
-def calculate_fitness_of_generation(matrix, generation):
-
-    result = []
-    for route in generation:
-        distance = 0
-        route += [route[0]]
-        for index in range(len(route) - 1):
-            distance += matrix[route[index]][route[index + 1]]
-        result.append((route, round(distance, 3)))
-
-    return result
-
-
-def calculate_fitness_of_generation2(generation, matrix):
+def calculate_fitness_of_generation(generation, matrix):
 
     result = []
     for route in generation:
@@ -41,7 +18,7 @@ def calculate_fitness_of_generation2(generation, matrix):
 
 def find_shortest_route(generation, matrix):
 
-    routes = calculate_fitness_of_generation2(generation, matrix)
+    routes = calculate_fitness_of_generation(generation, matrix)
 
     return min(routes), generation[routes.index(min(routes))]
 
@@ -69,7 +46,7 @@ def greedy(matrix, starting_index):
 
 def tournament(generation, matrix):
 
-    distances = calculate_fitness_of_generation2(generation, matrix)
+    distances = calculate_fitness_of_generation(generation, matrix)
     generation_with_distance = list(zip(generation, distances))
 
     new_generation = []
@@ -86,7 +63,7 @@ def tournament(generation, matrix):
 
 def choose_the_best(generation, matrix):
 
-    distances = calculate_fitness_of_generation2(generation, matrix)
+    distances = calculate_fitness_of_generation(generation, matrix)
     generation_with_distance = zip(distances, generation)
 
     result = [x for _, x in sorted(generation_with_distance)]
@@ -109,7 +86,7 @@ def create_ranks(length, sp):
 
 def rank_based_wheel_selection(generation, matrix, ranks, max_rank):
 
-    distances = calculate_fitness_of_generation2(generation, matrix)
+    distances = calculate_fitness_of_generation(generation, matrix)
     generation_with_distance = sorted(list(zip(generation, distances)), key=lambda pair: pair[1])
     new_generation = []
 
@@ -169,7 +146,7 @@ def ox(parent1, parent2):
     return child1, child2
 
 
-def mutation(generation):
+def simple_mutation(generation):
 
     for route in generation:
 
@@ -195,16 +172,17 @@ def inversion_mutation(generation):
     return generation
 
 
-size_of_generation = 200
+size_of_generation = 500
 parents_for_next_generation = int(size_of_generation * 0.5)
-number_of_generations = 10000
-
 chance_for_mutation = 2
 
 
 def main():
 
     global chance_for_mutation
+    global size_of_generation
+    global parents_for_next_generation
+
     while True:
         file = createdata.choose_file()
         if createdata.check_file(file):
@@ -212,75 +190,90 @@ def main():
             break
         else:
             print("Choose another file or use a generator.")
+    # for size in range(15):
+    #     print((size + 1) * 20)
+    #     size_of_generation += 20
+    #     parents_for_next_generation = int(size_of_generation * 0.5)
+    #
+    #     createdata.generator(size_of_generation)
+    #     matrix = createdata.create_matrix('generator.txt')
+    #
+    #     greedy_route = greedy(matrix, 0)
+    #     print(f'Greedy: {calculate_fitness_of_generation([greedy_route], matrix)[0]}')
 
-    start_time = time.time()
+    for attempt in range(5):
 
-    cities = [x for x in range(len(matrix))]
-    ranks, max_rank = create_ranks(size_of_generation, 2)
-    print(ranks)
-    generation = []
-    i = 0
-    generation_without_change = 0
-    last_distance = 0
+        start_time = time.time()
 
-    while len(generation) < size_of_generation:
-        chance = random.randint(1, 10)
-        if chance <= 9:
-            route = random.sample(cities, len(cities))
-        else:
-            route = greedy(matrix, random.randint(0, len(cities) - 1))
-        if route not in generation:
-            generation.append(route)
+        cities = [x for x in range(len(matrix))]
+        ranks, max_rank = create_ranks(size_of_generation, 2)
+        # print(ranks)
+        generation = []
+        i = 0
+        generation_without_change = 0
+        last_distance = 0
 
-    while True:
-
-        # random.shuffle(generation)
-
-        tmp_distance, tmp_route = find_shortest_route(generation, matrix)
-
-        if abs(last_distance - tmp_distance) < tmp_distance * 0.001:
-            generation_without_change += 1
-        else:
-            generation_without_change = 0
-
-        chance_for_mutation = float(min(10.0, 2.0 + float(generation_without_change) / 500))
-
-        print(f'{i + 1} :  {tmp_distance}, {generation_without_change}, {chance_for_mutation}')
-        last_distance = tmp_distance
-        i += 1
-
-        generation.remove(tmp_route)
-
-        generation = tournament(generation, matrix)
-        # generation = rank_based_wheel_selection(generation, matrix, ranks, max_rank)
-        # generation = choose_the_best(generation, matrix)
-
-        generation.append(tmp_route)
-
-        available_parents = [x for x in range(0, len(generation))]
-
-        while available_parents:
-
-            parent1_index = random.choice(available_parents)
-            available_parents.remove(parent1_index)
-
-            parent2_index = random.choice(available_parents)
-            available_parents.remove(parent2_index)
-
-            chance = random.randint(1, 10)
-            if chance <= 10:
-                tmp1, tmp2 = ox(generation[parent1_index], generation[parent2_index])
+        while len(generation) < size_of_generation:
+            chance = random.randint(1, 100)
+            if chance <= 100:
+                route = random.sample(cities, len(cities))
             else:
-                tmp1, tmp2 = pmx(generation[parent1_index], generation[parent2_index])
+                route = greedy(matrix, random.randint(0, len(cities) - 1))
+            if route not in generation:
+                generation.append(route)
 
-            generation.append(tmp1)
-            generation.append(tmp2)
+        while True:
 
-        generation = inversion_mutation(generation)
+            # random.shuffle(generation)
 
-        if time.time() - start_time >= 120:
-            print(time.time() - start_time)
-            break
+            tmp_distance, tmp_route = find_shortest_route(generation, matrix)
+
+            if abs(last_distance - tmp_distance) < tmp_distance * 0.001:
+                generation_without_change += 1
+            else:
+                generation_without_change = 0
+
+            chance_for_mutation = float(min(10.0, 2.0 + float(generation_without_change) / 100))
+
+            print(f'{i + 1} :  {tmp_distance}, {tmp_route}')
+            last_distance = tmp_distance
+            i += 1
+
+            generation.remove(tmp_route)
+
+            generation = tournament(generation, matrix)
+            # generation = rank_based_wheel_selection(generation, matrix, ranks, max_rank)
+            # generation = choose_the_best(generation, matrix)
+
+            generation.append(tmp_route)
+
+            available_parents = [x for x in range(0, len(generation))]
+
+            while available_parents:
+
+                parent1_index = random.choice(available_parents)
+                available_parents.remove(parent1_index)
+
+                parent2_index = random.choice(available_parents)
+                available_parents.remove(parent2_index)
+
+                chance = random.randint(1, 10)
+                if chance <= 10:
+                    tmp1, tmp2 = ox(generation[parent1_index], generation[parent2_index])
+                else:
+                    tmp1, tmp2 = pmx(generation[parent1_index], generation[parent2_index])
+
+                generation.append(tmp1)
+                generation.append(tmp2)
+
+            generation = inversion_mutation(generation)
+            generation = simple_mutation(generation)
+
+            if time.time() - start_time >= 120:
+                # print(time.time() - start_time)
+                break
+        print(f'GA: {tmp_distance}')
+    print('END')
 
 
 if __name__ == '__main__':
